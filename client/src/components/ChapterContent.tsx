@@ -7,21 +7,58 @@ interface ChapterContentProps {
   searchQuery?: string;
 }
 
+// Advanced search function with fuzzy matching
+function advancedSearch(text: string, query: string): boolean {
+  if (!query.trim()) return true;
+  
+  const normalizedText = text.toLowerCase().trim();
+  const normalizedQuery = query.toLowerCase().trim();
+  
+  // Exact match
+  if (normalizedText.includes(normalizedQuery)) return true;
+  
+  // Partial word matching
+  const queryWords = normalizedQuery.split(/\s+/);
+  const textWords = normalizedText.split(/\s+/);
+  
+  // Check if all query words are found in text (partial matching)
+  const allWordsFound = queryWords.every(queryWord => 
+    textWords.some(textWord => textWord.includes(queryWord))
+  );
+  
+  if (allWordsFound) return true;
+  
+  // Character-based fuzzy matching for Bengali
+  const queryChars = normalizedQuery.split('');
+  const textChars = normalizedText.split('');
+  
+  // Check if query characters appear in sequence in text
+  let queryIndex = 0;
+  for (let i = 0; i < textChars.length && queryIndex < queryChars.length; i++) {
+    if (textChars[i] === queryChars[queryIndex]) {
+      queryIndex++;
+    }
+  }
+  
+  // If 70% of query characters are found in sequence, consider it a match
+  return queryIndex >= Math.ceil(queryChars.length * 0.7);
+}
+
 export default function ChapterContent({ chapterId, searchQuery = "" }: ChapterContentProps) {
   const chapter = chapters.find((ch) => ch.id === chapterId);
 
   if (!chapter) return null;
 
-  // Filter sections and questions based on search query
+  // Advanced filtering with fuzzy search
   const filteredSections = searchQuery
     ? chapter.sections
         .map((section) => ({
           ...section,
           questions: section.questions.filter(
             (q) =>
-              q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              q.answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              q.keyword?.toLowerCase().includes(searchQuery.toLowerCase())
+              advancedSearch(q.question, searchQuery) ||
+              advancedSearch(q.answer, searchQuery) ||
+              (q.keyword && advancedSearch(q.keyword, searchQuery))
           ),
         }))
         .filter((section) => section.questions.length > 0)
@@ -41,9 +78,16 @@ export default function ChapterContent({ chapterId, searchQuery = "" }: ChapterC
           </h2>
         </div>
         {searchQuery && (
-          <p className="text-muted-foreground">
-            "{searchQuery}" এর জন্য {filteredSections.reduce((acc, s) => acc + s.questions.length, 0)} টি ফলাফল
-          </p>
+          <div className="space-y-2">
+            <p className="text-muted-foreground">
+              "{searchQuery}" এর জন্য {filteredSections.reduce((acc, s) => acc + s.questions.length, 0)} টি ফলাফল
+            </p>
+            {filteredSections.reduce((acc, s) => acc + s.questions.length, 0) > 0 && (
+              <p className="text-sm text-green-600 dark:text-green-400">
+                ✅ Live search - ফলাফলগুলো real-time আপডেট হচ্ছে
+              </p>
+            )}
+          </div>
         )}
       </div>
 

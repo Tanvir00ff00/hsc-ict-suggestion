@@ -1,7 +1,8 @@
-import { Search, Moon, Sun, GraduationCap } from "lucide-react";
+import { Search, Moon, Sun, GraduationCap, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
+import AboutWindow from "./AboutWindow";
 
 interface HeaderProps {
   searchQuery: string;
@@ -10,6 +11,7 @@ interface HeaderProps {
 
 export default function Header({ searchQuery, onSearchChange }: HeaderProps) {
   const [isDark, setIsDark] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
 
   useEffect(() => {
     const isDarkMode = document.documentElement.classList.contains('dark');
@@ -38,15 +40,26 @@ export default function Header({ searchQuery, onSearchChange }: HeaderProps) {
               <p className="text-sm md:text-base text-blue-50 mt-1">তোমার পরীক্ষার সেরা সাথী | সহজে শিখো, ভালো করো</p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            className="text-white hover:bg-white/20"
-            data-testid="button-theme-toggle"
-          >
-            {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsAboutOpen(true)}
+              className="text-white hover:bg-white/20"
+              data-testid="button-about"
+            >
+              <Info className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="text-white hover:bg-white/20"
+              data-testid="button-theme-toggle"
+            >
+              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+          </div>
         </div>
         
         <div className="relative max-w-4xl mx-auto">
@@ -61,6 +74,12 @@ export default function Header({ searchQuery, onSearchChange }: HeaderProps) {
           />
         </div>
       </div>
+      
+      {/* About Window */}
+      <AboutWindow 
+        isOpen={isAboutOpen} 
+        onClose={() => setIsAboutOpen(false)} 
+      />
     </header>
   );
 }

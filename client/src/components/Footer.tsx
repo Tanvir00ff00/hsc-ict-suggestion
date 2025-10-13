@@ -17,7 +17,7 @@ export default function Footer() {
             </p>
             
             <p className="text-xs text-muted-foreground">
-              © 2024 আইসিটি সাজেশন | সকল অধিকার সংরক্ষিত
+              © 2025 ICT Suggestions | All Rights Reserved by Tanvir Hossain
             </p>
           </div>
         </Card>
