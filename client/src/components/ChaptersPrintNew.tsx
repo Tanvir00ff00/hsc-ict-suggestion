@@ -15,10 +15,9 @@ export default function ChaptersPrintNew({ isOpen, onClose }: PrintProps) {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
-    }
-    return () => {
+    } else {
       document.body.style.overflow = "auto";
-    };
+    }
   }, [isOpen]);
 
   const toggleChapter = (id: number) => {
@@ -28,7 +27,10 @@ export default function ChaptersPrintNew({ isOpen, onClose }: PrintProps) {
   };
 
   const handlePrint = () => {
-    window.print();
+    // Small delay to ensure DOM is ready
+    setTimeout(() => {
+      window.print();
+    }, 100);
   };
 
   const selectedData = chapters.filter(ch => selected.includes(ch.id));
@@ -43,10 +45,13 @@ export default function ChaptersPrintNew({ isOpen, onClose }: PrintProps) {
     <>
       <GlobalPrintStyles fontSize={fontSize} />
       
-      {/* Modal Overlay */}
-      <div className="fixed inset-0 bg-black/60 z-50 print:hidden" onClick={onClose} />
+      {/* Modal Overlay - Hidden on print */}
+      <div 
+        className="fixed inset-0 bg-black/60 z-50 print:hidden" 
+        onClick={onClose} 
+      />
       
-      {/* Modal Content */}
+      {/* Modal Content - Hidden on print */}
       <div className="fixed inset-4 md:inset-8 z-50 bg-white dark:bg-slate-900 rounded-xl shadow-2xl flex flex-col print:hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-5 rounded-t-xl">
@@ -57,7 +62,7 @@ export default function ChaptersPrintNew({ isOpen, onClose }: PrintProps) {
                 অধ্যায় প্রিন্ট সিস্টেম
               </h2>
               <p className="text-blue-100 text-sm mt-1">
-                {selected.length} অধ্যায় | {totalQuestions} প্রশ্ন
+                {selected.length} অধ্যায় নির্বাচিত | {totalQuestions} টি প্রশ্ন
               </p>
             </div>
             <Button
@@ -89,7 +94,11 @@ export default function ChaptersPrintNew({ isOpen, onClose }: PrintProps) {
               </select>
             </div>
             
-            <Button onClick={handlePrint} className="ml-auto bg-blue-600 hover:bg-blue-700">
+            <Button 
+              onClick={handlePrint} 
+              className="ml-auto bg-blue-600 hover:bg-blue-700"
+              disabled={selected.length === 0}
+            >
               <Download className="h-4 w-4 mr-2" />
               PDF তৈরি করুন
             </Button>
@@ -140,7 +149,7 @@ export default function ChaptersPrintNew({ isOpen, onClose }: PrintProps) {
         </div>
       </div>
 
-      {/* Print Content - Hidden on screen, visible on print */}
+      {/* Print Content - Only visible during print */}
       <div className="hidden print:block">
         <PrintContent chapters={selectedData} fontSize={fontSize} />
       </div>
@@ -150,10 +159,20 @@ export default function ChaptersPrintNew({ isOpen, onClose }: PrintProps) {
 
 // Separate Print Content Component
 function PrintContent({ chapters: printChapters, fontSize }: { chapters: Chapter[], fontSize: number }) {
+  if (printChapters.length === 0) {
+    return null;
+  }
+
   return (
-    <div style={{ fontSize: `${fontSize}px`, lineHeight: '1.5' }}>
-      {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: '16px', borderBottom: '2px solid #333', paddingBottom: '12px' }}>
+    <div style={{ fontSize: `${fontSize}px`, lineHeight: '1.6', padding: '0', margin: '0' }}>
+      {/* Header - Prints on every page */}
+      <div style={{ 
+        textAlign: 'center', 
+        marginBottom: '16px', 
+        borderBottom: '2px solid #333', 
+        paddingBottom: '12px',
+        pageBreakAfter: 'avoid'
+      }}>
         <h1 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 4px 0' }}>
           আইসিটি সাজেশন - HSC 2026
         </h1>
@@ -161,32 +180,58 @@ function PrintContent({ chapters: printChapters, fontSize }: { chapters: Chapter
           সম্পূর্ণ প্রশ্নাবলী ও উত্তর | তানভীর হোছাইন
         </p>
         <p style={{ fontSize: '9px', margin: '4px 0 0 0', color: '#888' }}>
-          অধ্যায়: {printChapters.map(ch => ch.id).join(', ')} | মোট প্রশ্ন: {printChapters.reduce((s, ch) => s + ch.sections.reduce((sec, s) => sec + s.questions.length, 0), 0)}
+          নির্বাচিত অধ্যায়: {printChapters.map(ch => ch.id).join(', ')} | 
+          মোট প্রশ্ন: {printChapters.reduce((s, ch) => s + ch.sections.reduce((sec, s) => sec + s.questions.length, 0), 0)}
         </p>
       </div>
 
       {/* Chapters */}
-      {printChapters.map((chapter, idx) => (
-        <div key={chapter.id} style={{ pageBreakBefore: idx > 0 ? 'always' : 'auto' }}>
+      {printChapters.map((chapter, chapterIdx) => (
+        <div 
+          key={chapter.id} 
+          style={{ 
+            pageBreakBefore: chapterIdx > 0 ? 'always' : 'auto',
+            pageBreakInside: 'auto'
+          }}
+        >
           {/* Chapter Header */}
           <div style={{
-            background: '#f3f4f6',
+            background: '#e5e7eb',
             padding: '10px',
             marginBottom: '12px',
             borderLeft: '4px solid #2563eb',
-            pageBreakAfter: 'avoid'
+            pageBreakAfter: 'avoid',
+            pageBreakInside: 'avoid'
           }}>
-            <h2 style={{ margin: 0, fontSize: `${fontSize + 3}px`, fontWeight: 'bold' }}>
+            <h2 style={{ 
+              margin: 0, 
+              fontSize: `${fontSize + 3}px`, 
+              fontWeight: 'bold',
+              color: '#1e40af'
+            }}>
               {chapter.icon} অধ্যায় {chapter.id}: {chapter.titleBangla}
             </h2>
+            <p style={{ 
+              margin: '4px 0 0 0', 
+              fontSize: `${fontSize - 1}px`,
+              color: '#4b5563'
+            }}>
+              {chapter.titleEnglish}
+            </p>
           </div>
 
           {/* Sections */}
-          {chapter.sections.map((section) => (
-            <div key={section.title} style={{ marginBottom: '16px' }}>
+          {chapter.sections.map((section, sectionIdx) => (
+            <div 
+              key={`${chapter.id}-${sectionIdx}`} 
+              style={{ 
+                marginBottom: '16px',
+                pageBreakInside: 'auto'
+              }}
+            >
               {/* Section Header */}
               <div style={{
-                background: '#eff6ff',
+                background: '#dbeafe',
                 borderLeft: '3px solid #3b82f6',
                 padding: '6px 10px',
                 marginBottom: '8px',
@@ -198,15 +243,18 @@ function PrintContent({ chapters: printChapters, fontSize }: { chapters: Chapter
               </div>
 
               {/* Questions */}
-              {section.questions.map((q) => (
-                <div key={q.id} style={{
-                  marginBottom: '10px',
-                  paddingLeft: '12px',
-                  borderLeft: '2px solid #d1d5db',
-                  pageBreakInside: 'avoid'
-                }}>
+              {section.questions.map((q, qIdx) => (
+                <div 
+                  key={`${chapter.id}-${sectionIdx}-${qIdx}`}
+                  style={{
+                    marginBottom: '12px',
+                    paddingLeft: '12px',
+                    borderLeft: '2px solid #d1d5db',
+                    pageBreakInside: 'avoid'
+                  }}
+                >
                   {/* Question */}
-                  <p style={{ margin: '0 0 4px 0', fontWeight: '600' }}>
+                  <p style={{ margin: '0 0 6px 0', fontWeight: '600' }}>
                     <span style={{ color: '#2563eb' }}>প্রঃ {q.number}.</span> {q.question}
                     {q.keyword && (
                       <span style={{
@@ -223,25 +271,30 @@ function PrintContent({ chapters: printChapters, fontSize }: { chapters: Chapter
                   </p>
 
                   {/* Answer */}
-                  <div style={{ margin: '2px 0', fontSize: `${fontSize - 1}px` }}>
+                  <div style={{ 
+                    margin: '4px 0', 
+                    fontSize: `${fontSize}px`,
+                    lineHeight: '1.5'
+                  }}>
                     <strong>উত্তর:</strong> {q.answer}
                   </div>
 
                   {/* Examples */}
                   {q.examples && (
                     <div style={{
-                      margin: '6px 0',
-                      padding: '6px 10px',
+                      margin: '8px 0',
+                      padding: '8px 10px',
                       background: '#f0f9ff',
                       borderLeft: '3px solid #0ea5e9',
-                      fontSize: `${fontSize - 1}px`
+                      fontSize: `${fontSize - 1}px`,
+                      pageBreakInside: 'avoid'
                     }}>
-                      <p style={{ margin: '0 0 4px 0', fontWeight: '600', fontSize: `${fontSize - 1}px` }}>
+                      <p style={{ margin: '0 0 4px 0', fontWeight: '600', fontSize: `${fontSize}px` }}>
                         📋 {q.examples.title}
                       </p>
                       <ul style={{ margin: 0, paddingLeft: '20px' }}>
                         {q.examples.content.map((ex, i) => (
-                          <li key={i}>{ex}</li>
+                          <li key={i} style={{ marginBottom: '2px' }}>{ex}</li>
                         ))}
                       </ul>
                     </div>
@@ -250,32 +303,34 @@ function PrintContent({ chapters: printChapters, fontSize }: { chapters: Chapter
                   {/* Tips */}
                   {q.tips && (
                     <div style={{
-                      margin: '6px 0',
-                      padding: '6px 10px',
+                      margin: '8px 0',
+                      padding: '8px 10px',
                       background: '#fffbeb',
                       borderLeft: '3px solid #f59e0b',
-                      fontSize: `${fontSize - 1}px`
+                      fontSize: `${fontSize - 1}px`,
+                      pageBreakInside: 'avoid'
                     }}>
                       <p style={{ margin: 0, fontWeight: '600' }}>
                         💡 {q.tips.title}
                       </p>
-                      <p style={{ margin: '2px 0 0 0' }}>{q.tips.content}</p>
+                      <p style={{ margin: '4px 0 0 0' }}>{q.tips.content}</p>
                     </div>
                   )}
 
                   {/* Work List */}
                   {q.workList && q.workList.length > 0 && (
                     <div style={{
-                      margin: '6px 0',
-                      padding: '6px 10px',
+                      margin: '8px 0',
+                      padding: '8px 10px',
                       background: '#eff6ff',
                       borderLeft: '3px solid #3b82f6',
-                      fontSize: `${fontSize - 1}px`
+                      fontSize: `${fontSize - 1}px`,
+                      pageBreakInside: 'avoid'
                     }}>
                       <p style={{ margin: '0 0 4px 0', fontWeight: '600' }}>📋 কাজের তালিকা:</p>
                       <ul style={{ margin: 0, paddingLeft: '20px' }}>
                         {q.workList.map((work, i) => (
-                          <li key={i}>{work}</li>
+                          <li key={i} style={{ marginBottom: '2px' }}>{work}</li>
                         ))}
                       </ul>
                     </div>
@@ -284,12 +339,12 @@ function PrintContent({ chapters: printChapters, fontSize }: { chapters: Chapter
                   {/* Years */}
                   {q.years && q.years.length > 0 && (
                     <p style={{
-                      margin: '2px 0 0 0',
+                      margin: '4px 0 0 0',
                       fontSize: `${fontSize - 2}px`,
                       color: '#6b7280',
                       fontStyle: 'italic'
                     }}>
-                      📅 বোর্ড: {q.years.join(', ')}
+                      📅 বোর্ড পরীক্ষা: {q.years.join(', ')}
                     </p>
                   )}
                 </div>
@@ -303,12 +358,18 @@ function PrintContent({ chapters: printChapters, fontSize }: { chapters: Chapter
       <div style={{
         marginTop: '24px',
         paddingTop: '12px',
-        borderTop: '1px solid #ccc',
+        borderTop: '1px solid #d1d5db',
         textAlign: 'center',
         fontSize: '8px',
-        color: '#666'
+        color: '#6b7280',
+        pageBreakInside: 'avoid'
       }}>
-        © 2025 আইসিটি সাজেশন - HSC 2026 | তানভীর হোছাইন | চাপরাশিরহাট ইসমাইল ডিগ্রী কলেজ
+        <p style={{ margin: 0 }}>
+          © 2025 আইসিটি সাজেশন - HSC 2026 | তানভীর হোছাইন
+        </p>
+        <p style={{ margin: '2px 0 0 0' }}>
+          চাপরাশিরহাট ইসমাইল ডিগ্রী কলেজ | রোল: 704
+        </p>
       </div>
     </div>
   );
@@ -320,13 +381,16 @@ function GlobalPrintStyles({ fontSize }: { fontSize: number }) {
     <style>{`
       @media print {
         @page {
-          margin: 15mm 12mm;
-          size: A4;
+          margin: 12mm 10mm;
+          size: A4 portrait;
         }
         
-        body {
+        html, body {
+          width: 100%;
+          height: 100%;
           margin: 0;
           padding: 0;
+          overflow: visible;
         }
         
         * {
@@ -334,12 +398,39 @@ function GlobalPrintStyles({ fontSize }: { fontSize: number }) {
           -webkit-print-color-adjust: exact;
         }
         
+        /* Hide everything except print content */
+        body > *:not(.print\\:block) {
+          display: none !important;
+        }
+        
+        /* Show only print content */
+        .print\\:block {
+          display: block !important;
+        }
+        
         .print\\:hidden {
           display: none !important;
         }
         
-        .print\\:block {
-          display: block !important;
+        /* Prevent breaks inside important elements */
+        h1, h2, h3, h4, h5, h6 {
+          page-break-after: avoid;
+          page-break-inside: avoid;
+        }
+        
+        /* Ensure proper page breaks */
+        .page-break-before {
+          page-break-before: always;
+        }
+        
+        .page-break-after {
+          page-break-after: always;
+        }
+        
+        /* Prevent orphans and widows */
+        p {
+          orphans: 3;
+          widows: 3;
         }
       }
     `}</style>
