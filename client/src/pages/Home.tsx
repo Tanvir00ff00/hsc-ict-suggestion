@@ -3,6 +3,8 @@ import Header from "@/components/Header";
 import ChapterTabs from "@/components/ChapterTabs";
 import ChapterContent from "@/components/ChapterContent";
 import Footer from "@/components/Footer";
+import AIAssistant from "@/components/AIAssistant";
+import ChaptersPrintNew from "@/components/ChaptersPrintNew";
 import { chapters } from "@/lib/ict-data";
 
 export default function Home() {
@@ -10,6 +12,8 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
+  const [showAI, setShowAI] = useState(false);
+  const [showPrintView, setShowPrintView] = useState(false);
 
   // Initialize theme from localStorage
   useEffect(() => {
@@ -17,6 +21,20 @@ export default function Home() {
     if (savedTheme === 'dark') {
       document.documentElement.classList.add('dark');
     }
+  }, []);
+
+  // Listen for print-friendly event
+  useEffect(() => {
+    const handlePrintEvent = () => setShowPrintView(true);
+    window.addEventListener('print-friendly', handlePrintEvent);
+    return () => window.removeEventListener('print-friendly', handlePrintEvent);
+  }, []);
+
+  // Listen for AI assistant event
+  useEffect(() => {
+    const handleAIEvent = () => setShowAI(true);
+    window.addEventListener('show-ai', handleAIEvent);
+    return () => window.removeEventListener('show-ai', handleAIEvent);
   }, []);
 
   // Debounced search for live results
@@ -102,7 +120,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header searchQuery={searchQuery} onSearchChange={handleSearchChange} />
+      <Header 
+        searchQuery={searchQuery} 
+        onSearchChange={handleSearchChange}
+      />
       <ChapterTabs activeChapter={activeChapter} onChapterChange={setActiveChapter} />
       <main className="flex-1">
         {showGlobalSearch ? (
@@ -183,6 +204,12 @@ export default function Home() {
         )}
       </main>
       <Footer />
+      
+      {/* AI Assistant */}
+      <AIAssistant isOpen={showAI} onClose={() => setShowAI(false)} />
+      
+      {/* Chapters Print View */}
+      <ChaptersPrintNew isOpen={showPrintView} onClose={() => setShowPrintView(false)} />
     </div>
   );
 }
